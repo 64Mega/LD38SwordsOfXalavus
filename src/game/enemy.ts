@@ -81,7 +81,7 @@ export function damage(enemy: any, amount: number) {
 }
 
 export function death(enemy: any) {
-    messagelog.push(`The ${enemy.name} was vanquished! Received ${enemy.gold} gold!`);
+    messagelog.push(`The ${enemy.name} was vanquished! Received ${enemy.gold}g`);
     player.give_gold(enemy.gold);
     effects.hit((enemy.x-maps.get_offset().x)*16, (enemy.y-maps.get_offset().y)*16);
     effects.blinksprite((enemy.x-maps.get_offset().x)*16, (enemy.y-maps.get_offset().y)*16, enemy.sprite);

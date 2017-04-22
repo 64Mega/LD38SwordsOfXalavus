@@ -143,6 +143,7 @@ export function draw_border(x: number, y: number, w: number, h: number, sprite: 
 // Quick sprite-draw function
 export function draw_sprite(spr: string, x: number, y: number) {
     let image = assets.image_get(spr);
+    if(image === undefined) { return; }
     if(!image && !image.is_ready) { return; }
     context.drawImage(image, 0,0,16,16,x, y,16,16);
 }

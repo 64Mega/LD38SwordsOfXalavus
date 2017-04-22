@@ -12,7 +12,8 @@ import * as gamestate from "./gamestate";
 export enum THING {
     DUMMY = 0,
     SIGNPOST,
-    PICKUP
+    PICKUP,
+    WARP
 }
 
 export let thingtypes = {
@@ -27,6 +28,22 @@ export let thingtypes = {
         solid: true,
         candestroy: true,
         x: 0, y: 0
+    },
+    "warp": {
+        type: THING.WARP,
+        name: "doorway",
+        sprite: "",
+        solid: false,
+        x: 0, y: 0,
+        target_x: 0, target_y: 0, target_map: ""
+    },
+    "shortsword": {
+        type: THING.PICKUP,
+        name: "short sword",
+        sprite: "thing/pickup_default",
+        solid: false,
+        x: 0, y: 0,
+        gives: items.itemtypes.shortsword
     }
 };
 
@@ -37,15 +54,26 @@ export function update(delta: number) {
         if(things[i].solid === true) {
             map.occupy(things[i].x, things[i].y);
         }
+        if(things[i].type === THING.WARP) {
+            if(things[i].x === player.getpos().x + map.get_offset().x &&
+                things[i].y === player.getpos().y + map.get_offset().y) {
+                    console.dir(things[i]);
+                    map.warpto(things[i].target_map, {x: things[i].target_x, y: things[i].target_y});
+                }
+        }
     }
 }
 
 export function render() {
     for(let i = 0; i < things.length; i++) {
         if(map.is_visible(things[i].x, things[i].y)) {
-            util.draw_sprite(things[i].sprite, things[i].x*16, things[i].y*16);
+            util.draw_sprite(things[i].sprite, (things[i].x*16)-(map.get_offset().x*16), (things[i].y*16)-(map.get_offset().y*16));
         }
     }
+}
+
+export function clear() {
+    things = [];
 }
 
 export function spawn(type: any, x: number, y: number) {
@@ -61,6 +89,19 @@ export function spawn(type: any, x: number, y: number) {
 export function is_thing(x: number, y: number) {
     for(let i = 0; i < things.length; i++) {
         if(things[i].x === x && things[i].y === y) { return true; }
+    }
+}
+
+export function get(x: number, y: number) {
+    for(let i = 0; i < things.length; i++) {
+        if(things[i].x === x && things[i].y === y) {
+            if(things[i].type === THING.PICKUP) {
+                inventory.add(things[i].gives);
+                messagelog.push(`Picked up ${things[i].name}`);
+                things.splice(i,1);
+                return;
+            }
+        }
     }
 }
 

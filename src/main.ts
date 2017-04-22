@@ -150,6 +150,7 @@ function loadAssets() {
     assets.image_load("ui/cursor/select", "data/images/ui/cursor_select.png");
     assets.image_load("fx/hit", "data/images/fx/hit1.png");
     assets.image_load("thing/signpost", "data/images/things/signpost.png");
+    assets.image_load("thing/pickup_default", "data/images/things/pickup_default.png");
 }
 
 // Little hack to ensure that timer doesn't fall too far behind in case of

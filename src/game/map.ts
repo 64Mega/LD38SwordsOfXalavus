@@ -47,6 +47,7 @@ function T(type : string) {
 }
 
 export function is_passable(x: number, y: number) {
+    if(current_map === undefined) { return; }
     if(x < 0 || y < 0 || x > current_map.width - 1 || y > current_map.height - 1) { return false; }
     switch(current_map.data[y * current_map.width + x]) {
         case 0:
@@ -115,6 +116,7 @@ export function do_spawns() {
             let e = current_map.meta.mapenemies[i];
             enemies.spawn(e.type, e.x, e.y);
         }
+        // current_map.meta.mapenemies = [];
     }
 }
 
@@ -122,9 +124,35 @@ export function do_things() {
     if(current_map && current_map.meta && current_map.meta.mapthings) {
         for(let i = 0; i < current_map.meta.mapthings.length; i++) {
             let t = current_map.meta.mapthings[i];
+            t.type.message = t.message;
+            if(t.type.target_map !== undefined) { 
+                t.type.target_map = t.target_map;
+                t.type.target_x = t.target_x;
+                t.type.target_y = t.target_y;
+            }
             things.spawn(t.type, t.x, t.y);
         }
+        // current_map.meta.mapthings = [];
     }
+}
+
+export function warpto(map: string, destination: any) {
+    current_map = maps[map];
+    offset_x = 0;
+    offset_y = 0;
+    console.log("Setting current map to " + map);
+    console.log("Current map: " + current_map);
+    enemies.clear_spawns();
+    things.clear();
+    do_spawns();
+    do_things();
+    let px = destination.x % 12;
+    let py = destination.y % 12;
+    let ox = (Math.floor(destination.x / 12) * 12);
+    let oy = (Math.floor(destination.y / 12) * 12);
+    offset_x = ox;
+    offset_y = oy;
+    player.setpos(px, py);
 }
 
 // Map Data
@@ -137,13 +165,31 @@ export function init() {
         player: {
             x: 6, y: 6
         },
+        entrypoint: {
+            active: false,
+            x: 0, y: 0
+        },
         mapenemies: [
             {type: enemies.enemyTypes.SNAKE, x: 4, y: 4 },
             {type: enemies.enemyTypes.SNAKE, x: 4, y: 8 },
             {type: enemies.enemyTypes.SNAKE, x: 15, y: 4 }
         ],
         mapthings: [
-            {type: things.thingtypes.signpost, x: 3, y: 3}
+            {type: things.thingtypes.signpost, x: 3, y: 3, message: ["This is the first signpost!","It serves no purpose..."]},
+            {type: things.thingtypes.signpost, x: 22, y: 3, message: ["Press E on doorways and stairways","to traverse them."]},
+            {type: things.thingtypes.warp, x:21, y: 2, target_map: "test/1", target_x: 6, target_y: 10}
         ]
-    }, [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 2, 2, 2, 2, 2, 2, 2, 6, 6, 1, 6, 6, 6, 2, 2, 2, 2, 2, 2, 4, 4, 5, 5, 5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 2, 2, 2, 3, 2, 4, 4, 4, 4, 5, 5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 2, 2, 2, 2, 2, 4, 4, 2, 2, 5, 5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 2, 2, 2, 2, 4, 4, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 2, 2, 2, 2, 4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 2, 2, 2, 2, 4, 4, 3, 2, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 2, 2, 2, 2, 6, 6, 2, 2, 3, 2, 4, 4, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 6, 6, 2, 2, 2, 2, 4, 4, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 6, 6, 6, 2, 2, 2, 4, 4, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 6, 6, 6, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 6, 6, 6, 2, 2, 2, 2, 2, 2, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 2, 2, 2, 2, 2, 2, 2, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 1, 1, 6, 6, 6, 6, 2, 2, 2, 2, 2, 6, 6, 6, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 6, 6, 6, 6, 6, 6, 6, 6, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 6, 6, 6, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+    }, [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 2, 2, 2, 2, 2, 2, 2, 6, 6, 1, 6, 6, 6, 2, 2, 2, 2, 2, 2, 4, 4, 5, 5, 5, 5, 5, 5, 4, 5, 4, 2, 2, 4, 4, 4, 6, 6, 2, 2, 2, 3, 2, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 2, 6, 6, 2, 2, 2, 2, 2, 4, 4, 2, 2, 5, 5, 2, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 6, 6, 2, 2, 2, 2, 4, 4, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 6, 6, 2, 2, 2, 2, 4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 2, 6, 6, 2, 2, 2, 2, 4, 5, 3, 2, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 2, 2, 4, 2, 6, 6, 2, 2, 3, 2, 4, 5, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 2, 4, 2, 6, 6, 2, 2, 2, 2, 4, 5, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 4, 2, 6, 6, 6, 2, 2, 4, 4, 4, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 4, 2, 6, 6, 6, 2, 2, 5, 4, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 4, 2, 6, 6, 6, 3, 4, 5, 4, 2, 2, 6, 6, 6, 2, 2, 2, 2, 2, 4, 4, 2, 2, 2, 4, 2, 6, 6, 6, 3, 4, 5, 5, 5, 4, 4, 2, 4, 4, 5, 4, 4, 4, 5, 5, 4, 4, 4, 2, 2, 6, 6, 6, 2, 4, 5, 5, 5, 2, 4, 4, 4, 4, 5, 5, 5, 4, 4, 4, 4, 4, 4, 2, 2, 6, 6, 2, 2, 2, 3, 2, 2, 2, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 3, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 1, 1, 6, 6, 6, 6, 2, 2, 2, 2, 2, 6, 6, 6, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 6, 6, 6, 6, 6, 6, 6, 6, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 6, 6, 6, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+
+    new_map("test/1", 12, 12, {
+        name: "Testmap 1",
+        mapenemies: [
+            {type: enemies.enemyTypes.SNAKE, x: 4, y: 4 }
+        ],
+        mapthings: [
+            {type: things.thingtypes.warp, x:6, y: 11, target_map: "debug", target_x: 21, target_y: 3},
+            {type: things.thingtypes.shortsword, x:6, y:3}
+        ]
+    },
+    [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 1, 1, 1, 1, 4, 4, 4, 1, 1, 1, 6, 6, 1, 1, 1, 4, 4, 4, 4, 4, 1, 1, 6, 6, 1, 1, 4, 4, 4, 4, 4, 4, 4, 1, 6, 6, 1, 1, 4, 4, 4, 4, 4, 4, 4, 1, 6, 6, 1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 4, 4, 5, 5, 5, 5, 5, 5, 5, 4, 6, 6, 1, 4, 4, 5, 5, 5, 5, 5, 4, 4, 6, 6, 1, 4, 4, 5, 5, 5, 5, 5, 4, 1, 6, 6, 1, 1, 4, 4, 5, 5, 5, 4, 4, 1, 6, 6, 1, 1, 1, 6, 6, 5, 6, 6, 1, 1, 6, 6, 6, 6, 6, 6, 6, 1, 6, 6, 6, 6, 6]);
 }

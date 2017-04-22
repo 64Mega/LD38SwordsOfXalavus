@@ -37,7 +37,7 @@ export let itemtypes = {
         action: ITEMACTIONS.WEAPON,
         name: "Iron Shortsword",
         price: 5,
-        atk: 1,
+        atk: 3,
         range: 1,
         quantity: 1,
         consume: false
@@ -74,6 +74,11 @@ export function create(itemtype: any) {
 
 export function use(itemtype: any) {
     switch(itemtype.action) {
+        case ITEMACTIONS.WEAPON: {
+            messagelog.push(`Equipped the ${itemtype.name}`);
+            player.equip_weapon(itemtype);
+            return true;
+        };
         case ITEMACTIONS.HEAL: {
             messagelog.push(`Used the ${itemtype.name}`);
             player.heal(itemtype.power);

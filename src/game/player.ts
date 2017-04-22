@@ -21,7 +21,8 @@ let cursor_y = 0;
 enum MODES {
     NORMAL = 0,
     ATTACK,
-    LOOK
+    LOOK,
+    GET
 };
 
 let mode = MODES.NORMAL;
@@ -126,7 +127,13 @@ export function update() {
             cursor_x = x;
             cursor_y = y;
             return false;
-        }else if(input.key_pressed(input.KEY.I)) {
+        } else if(input.key_pressed(input.KEY.G)) {
+            mode = MODES.GET;
+            messagelog.push("Get with arrow keys");
+            cursor_x = x;
+            cursor_y = y;
+            return false;
+        } else if(input.key_pressed(input.KEY.I)) {
             gamestate.set_state(gamestate.STATES.INVENTORY);
             return false;
         }
@@ -156,6 +163,44 @@ export function update() {
                 } 
             } else {
                 messagelog.push("Get closer first!");
+            }
+            mode = MODES.NORMAL;
+            return true;
+        }
+        
+        if(input.key_pressed(input.KEY.LEFT)) {
+            if(cursor_x > 0) { cursor_x -= 1; }
+        }
+        if(input.key_pressed(input.KEY.RIGHT)) {
+            if(cursor_x < 11) { cursor_x += 1; }
+        }
+        if(input.key_pressed(input.KEY.UP)) {
+            if(cursor_y > 0) { cursor_y -= 1; }
+        }
+        if(input.key_pressed(input.KEY.DOWN)) {
+            if(cursor_y < 11) { cursor_y += 1; }
+        }  
+    }
+    if(mode === MODES.GET) {
+        if(input.key_pressed(input.KEY.ESCAPE) ||
+            input.key_pressed(input.KEY.BACKSPACE)) {
+                mode = MODES.NORMAL;
+                messagelog.push("Get mode canceled");
+            }
+
+            if(input.key_pressed(input.KEY.ENTER) || 
+        input.key_pressed(input.KEY.G)) {
+            let edx = Math.abs((x+maps.get_offset().x) - (cursor_x+maps.get_offset().x));
+            let edy = Math.abs((y+maps.get_offset().y) - (cursor_y+maps.get_offset().y));
+            if(edx <= 1 && edy <= 1) {
+                let thing = things.is_thing(cursor_x+maps.get_offset().x, cursor_y+maps.get_offset().y);
+                if(thing === true) {
+                    things.get(cursor_x+maps.get_offset().x, cursor_y+maps.get_offset().y);
+                } else {
+                    messagelog.push(`You can't take that!`);
+                } 
+            } else {
+                messagelog.push("Too far away!");
             }
             mode = MODES.NORMAL;
             return true;
@@ -311,6 +356,9 @@ export function draw() {
     if(mode === MODES.LOOK) {
         util.draw_sprite("ui/cursor/select", cursor_x*16, cursor_y*16);
     }
+    if(mode === MODES.GET) {
+        util.draw_sprite("ui/cursor/select", cursor_x*16, cursor_y*16);
+    }
 }
 
 export function draw_stats() {
@@ -328,4 +376,6 @@ export function draw_stats() {
     util.draw_highlight_text(208, 72, "Attack", "white");
     util.draw_highlight_text(208, 80, "Look", "slategray");
     util.draw_highlight_text(208, 88, "Inventory", "white");
+    util.draw_highlight_text(208, 96, "Enter", "slategray");
+    util.draw_highlight_text(208, 104, "Get", "white");
 }
