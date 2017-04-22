@@ -11,6 +11,7 @@ import * as maps from './game/map';
 import * as player from './game/player';
 import * as enemy from './game/enemy';
 import * as effects from './game/fx';
+import * as inventory from "./game/inventory";
 
 let time = Date.now();
 let time_last = Date.now();
@@ -120,6 +121,7 @@ function main() {
 
     gamestate.bind_state(gamestate.STATES.DEBUG, update, render);
     gamestate.set_state(gamestate.STATES.DEBUG);
+    inventory.bind();
 
     // Start game loop
     requestAnimationFrame(game_loop);

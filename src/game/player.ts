@@ -7,6 +7,7 @@ import * as input from "../input";
 import * as combat from "./combat";
 import * as messagelog from "./messagelog";
 import * as enemies from "./enemy";
+import * as gamestate from "./gamestate";
 
 let x: number = 0;
 let y: number = 0;
@@ -51,6 +52,15 @@ export function getpos() {
     }
 }
 
+export function heal(amount: number) {
+    let a = stats.maxhp - stats.hp; 
+    stats.hp += amount;
+    if(stats.hp > stats.maxhp) { stats.hp = stats.maxhp; }
+    let b = stats.maxhp - stats.hp;
+    b = Math.abs(b-a);
+    messagelog.push(`Healed ${b} HP!`);
+}
+
 export function give_gold(amount: number) {
     stats.gold += amount;
 }
@@ -78,6 +88,9 @@ export function update() {
             messagelog.push("Choose a target with arrow keys");
             cursor_x = x;
             cursor_y = y;
+            return false;
+        } else if(input.key_pressed(input.KEY.I)) {
+            gamestate.set_state(gamestate.STATES.INVENTORY);
             return false;
         }
     } 
@@ -211,4 +224,5 @@ export function draw_stats() {
     util.set_font("font/main");
     util.draw_highlight_text(208, 72, "Attack", "white");
     util.draw_highlight_text(208, 80, "Look", "slategray");
+    util.draw_highlight_text(208, 88, "Inventory", "white");
 }
