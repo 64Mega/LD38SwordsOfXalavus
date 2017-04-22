@@ -12,8 +12,8 @@ export function canvas_init(width: number, height: number) {
 
     let win_width = window.innerWidth;
     let win_height = window.innerHeight;
-    let scale_a = Math.floor((win_width / width)) - 1;
-    let scale_b = Math.floor((win_height / height)) - 1;
+    let scale_a = Math.floor((win_width / width));
+    let scale_b = Math.floor((win_height / height));
     let scale = scale_a < scale_b ? scale_a : scale_b;
     if(scale < 1) { scale = 1; }
     let final_width = width * scale;
@@ -58,6 +58,27 @@ export function draw_text(x : number, y : number, str : string) {
     }
 }
 
+export function draw_boxed_text(x: number, y: number, str: string, bgcolor: string) {
+    var texwidth = str.length * 5;
+    draw_fillrect(x,y,texwidth,8,bgcolor);
+    set_font("font/main");
+    draw_text(x,y,str);
+}
+
+export function draw_highlight_text(x: number, y: number, str: string, bgcolor: string) {
+    draw_text_inverted(x,y,str[0],bgcolor);
+    let rstr = str.split('').splice(1).join('');
+    set_font("font/main");
+    draw_text(x+5,y,rstr);
+}
+
+export function draw_text_inverted(x: number, y: number, str: string, bgcolor: string) {
+    var texwidth = str.length * 5;
+    draw_fillrect(x,y,texwidth,8,bgcolor);
+    set_font("font/inverted");
+    draw_text(x,y,str);
+}
+
 export function draw_clear(clear_color : string) {
     context.fillStyle = "#0A0A0A";
     context.fillRect(0,0,context_width,context_height);
@@ -87,4 +108,46 @@ export function draw_rect(x : number, y : number, w : number, h : number, color 
     draw_line(x+w,y,x+w,y+h,color);
     draw_line(x+w,y+h,x,y+h,color);
     draw_line(x,y+h,x,y+h,color);
+}
+
+// draw_border() draws a rectangle using a border-sprite
+// Useful for textboxes
+// Width and Height are in subtiles (8x8)
+export function draw_border(x: number, y: number, w: number, h: number, sprite: string, fill: boolean) {
+    let image = assets.image_get(sprite);
+    
+    if(fill === true) { 
+        context.drawImage(image, 8,8,8,8,x,y,w*8,h*8);
+    }
+
+    if(!image && !image.is_ready) { return; }
+    for(let i = 0; i < w; i++) {
+        if(i === 0) {
+            context.drawImage(image, 0, 0, 8, 8, x, y, 8, 8);
+            context.drawImage(image, 0, 16, 8, 8, x, y+((h-1)*8), 8, 8);
+        } else
+        if(i === w-1) {
+            context.drawImage(image, 16, 0, 8, 8, x+(i*8), y, 8, 8);
+            context.drawImage(image, 16, 16, 8, 8, x+(i*8), y+((h-1)*8), 8, 8);
+        } else {
+            context.drawImage(image, 8, 0, 8, 8, x+(i*8), y, 8, 8);
+            context.drawImage(image, 8, 16, 8, 8, x+(i*8), y+((h-1)*8), 8, 8);
+        }
+    }
+    for(let i = 1; i < h-1; i++) {
+        context.drawImage(image, 0,8, 8, 8, x, y+(i*8), 8, 8);
+        context.drawImage(image, 16,8, 8, 8, x+((w-1)*8), y+(i*8), 8, 8);
+    }
+}
+
+// Quick sprite-draw function
+export function draw_sprite(spr: string, x: number, y: number) {
+    let image = assets.image_get(spr);
+    if(!image && !image.is_ready) { return; }
+    context.drawImage(image, 0,0,16,16,x, y,16,16);
+}
+
+// Quick-n-dirty object clone
+export function clone_object(obj) {
+    return JSON.parse(JSON.stringify(obj));
 }
