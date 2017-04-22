@@ -5,7 +5,7 @@ import * as util from '../util';
 let messages = ["","","",""];
 let y_offset = 0;
 let delay = 0;
-const SCROLL_DELAY = 20;
+const SCROLL_DELAY = 2;
 
 export function push(str: string) {
     messages.push(str);

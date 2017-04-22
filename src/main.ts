@@ -12,6 +12,8 @@ import * as player from './game/player';
 import * as enemy from './game/enemy';
 import * as effects from './game/fx';
 import * as inventory from "./game/inventory";
+import * as message from "./game/message";
+import * as things from "./game/things";
 
 let time = Date.now();
 let time_last = Date.now();
@@ -25,8 +27,8 @@ function game_loop() {
 
     if(assets.assets_loaded() && can_loop) {
         let current_state = gamestate.get_current_state();
-        if(current_state.update) { current_state.update(delta); }
-        if(current_state.render) { current_state.render(); }
+        if(current_state && current_state.update) { current_state.update(delta); }
+        if(current_state && current_state.render) { current_state.render(); }
     } else {
         if(can_loop) {
             let loaded = assets.get_assets_loaded();
@@ -69,9 +71,14 @@ function update(delta : number) {
     player.update_occupy();
     enemy.update_occupy();
     effects.update(delta);
+    things.update(delta);
     
     if(player.update() === true) {
         updateWorld(delta);
+    }
+
+    if(input.key_pressed(input.KEY.B)) {
+        gamestate.set_state(gamestate.STATES.MESSAGE);
     }
 
     player.update_screen();
@@ -100,6 +107,7 @@ function render() {
 
     maps.render();
     enemy.render();
+    things.render();
     player.draw();
     effects.render();
     
@@ -116,12 +124,14 @@ function main() {
 
     maps.switch_map("debug");
 
-    enemy.spawn(enemy.enemyTypes.SNAKE, 4,4);
-    enemy.spawn(enemy.enemyTypes.SNAKE, 15,4);
-
     gamestate.bind_state(gamestate.STATES.DEBUG, update, render);
     gamestate.set_state(gamestate.STATES.DEBUG);
     inventory.bind();
+    message.bind();
+    message.clear();
+    message.push("This is a test");
+    message.push("There are many like it,");
+    message.push("But this one is mine");
 
     // Start game loop
     requestAnimationFrame(game_loop);
@@ -137,7 +147,9 @@ function loadAssets() {
     assets.image_load("ui/border", "data/images/ui/ui_borders.png");
     assets.image_load("chars/player", "data/images/chars/player.png");
     assets.image_load("ui/cursor/attack", "data/images/ui/cursor_attack.png");
+    assets.image_load("ui/cursor/select", "data/images/ui/cursor_select.png");
     assets.image_load("fx/hit", "data/images/fx/hit1.png");
+    assets.image_load("thing/signpost", "data/images/things/signpost.png");
 }
 
 // Little hack to ensure that timer doesn't fall too far behind in case of

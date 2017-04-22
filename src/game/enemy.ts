@@ -15,12 +15,11 @@ export let enemyTypes = {
         name: "Snake",
         detail: "Red Snake",
         hp: 2,
-        mp: 0,
-        xp: 3,
         gold: 1,
-        atk: 2,
+        atk: 1,
         x: 0,
-        y: 0
+        y: 0,
+        range: 1
     }
 };
 
@@ -90,7 +89,6 @@ export function death(enemy: any) {
 
 export function get_at_position(x: number, y: number) {
     for(let i = 0; i < enemies.length; i++) {
-        console.log(`checking enemy @ ${enemies[i].x}, ${enemies[i].y}`);
         if(enemies[i].x === x && enemies[i].y === y) { 
             return enemies[i]; 
         }
@@ -122,7 +120,14 @@ export function update(delta: number) {
                 death(enemies[i]);
                 enemies.splice(i,1);
             } else {
-                move_toward_player(enemies[i]);
+                let edx = Math.abs((e.x) - (player.getpos().x+maps.get_offset().x));
+                let edy = Math.abs((e.y) - (player.getpos().y+maps.get_offset().y));
+                if(edx <= e.range && edy <= e.range) {
+                    messagelog.push(`The ${e.name} attacks you!`);
+                    player.hurt(e.atk);
+                } else { 
+                    move_toward_player(enemies[i]);
+                }
             }
         }
     }
@@ -130,6 +135,10 @@ export function update(delta: number) {
 
 export function load() {
     assets.image_load("enemy/snake", "data/images/chars/snake.png");
+}
+
+export function clear_spawns() {
+    enemies = [];
 }
 
 export function spawn(type: any, x: number, y: number) {

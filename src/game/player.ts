@@ -8,6 +8,9 @@ import * as combat from "./combat";
 import * as messagelog from "./messagelog";
 import * as enemies from "./enemy";
 import * as gamestate from "./gamestate";
+import * as inventory from "./inventory";
+import * as things from "./things";
+import * as effects from "./fx";
 
 let x: number = 0;
 let y: number = 0;
@@ -34,7 +37,27 @@ let stats = {
     gold: 0
 }
 
+let equipment = {
+    armor: {
+        name: "Plain Clothes",
+        def: 0    
+    },
+    weapon: {
+        name: "Bare Fists",
+        atk: 1,
+        range: 1
+    }
+};
+
 // Functions
+
+export function equip_armor(armor: any) {
+    equipment.armor = armor;
+}
+
+export function equip_weapon(weapon: any) {
+    equipment.weapon = weapon;
+}
 
 export function init(xpos: number, ypos: number) {
     setpos(xpos, ypos);
@@ -51,6 +74,14 @@ export function getpos() {
         "y": y
     }
 }
+
+export function hurt(amount: number) {
+    let val = Math.max(0, amount - equipment.armor.def);
+    messagelog.push(`Took ${val} damage`);
+    stats.hp -= val;
+}
+
+// TODO: Add death system
 
 export function heal(amount: number) {
     let a = stats.maxhp - stats.hp; 
@@ -89,42 +120,111 @@ export function update() {
             cursor_x = x;
             cursor_y = y;
             return false;
-        } else if(input.key_pressed(input.KEY.I)) {
+        } else if(input.key_pressed(input.KEY.L)) {
+            mode = MODES.LOOK;
+            messagelog.push("Look around with arrow keys");
+            cursor_x = x;
+            cursor_y = y;
+            return false;
+        }else if(input.key_pressed(input.KEY.I)) {
             gamestate.set_state(gamestate.STATES.INVENTORY);
             return false;
         }
     } 
+    if(mode === MODES.LOOK) {
+        if(input.key_pressed(input.KEY.ESCAPE) ||
+            input.key_pressed(input.KEY.BACKSPACE)) {
+                mode = MODES.NORMAL;
+                messagelog.push("Look mode canceled");
+            }
+
+            if(input.key_pressed(input.KEY.ENTER) || 
+        input.key_pressed(input.KEY.L)) {
+            let edx = Math.abs((x+maps.get_offset().x) - (cursor_x+maps.get_offset().x));
+            let edy = Math.abs((y+maps.get_offset().y) - (cursor_y+maps.get_offset().y));
+            if(edx <= 1 && edy <= 1) {
+                let enm = enemies.get_at_position(cursor_x+maps.get_offset().x, cursor_y+maps.get_offset().y);
+                if(enm) {
+                    messagelog.push(`You see a ${enm.detail}`);
+                } else {
+                    let thing = things.is_thing(cursor_x+maps.get_offset().x, cursor_y+maps.get_offset().y);
+                    if(thing === true) {
+                        things.look(cursor_x+maps.get_offset().x, cursor_y+maps.get_offset().y);
+                    } else {
+                        messagelog.push(`You see nothing of interest`);
+                    }
+                } 
+            } else {
+                messagelog.push("Get closer first!");
+            }
+            mode = MODES.NORMAL;
+            return true;
+        }
+        
+        if(input.key_pressed(input.KEY.LEFT)) {
+            if(cursor_x > 0) { cursor_x -= 1; }
+        }
+        if(input.key_pressed(input.KEY.RIGHT)) {
+            if(cursor_x < 11) { cursor_x += 1; }
+        }
+        if(input.key_pressed(input.KEY.UP)) {
+            if(cursor_y > 0) { cursor_y -= 1; }
+        }
+        if(input.key_pressed(input.KEY.DOWN)) {
+            if(cursor_y < 11) { cursor_y += 1; }
+        }  
+    }
     if(mode === MODES.ATTACK) {
         if(input.key_pressed(input.KEY.ESCAPE) ||
             input.key_pressed(input.KEY.BACKSPACE)) {
                 mode = MODES.NORMAL;
-                messagelog.push("Attack canceled");
+                messagelog.push("Attack mode canceled");
             }
 
         if(input.key_pressed(input.KEY.ENTER) || 
         input.key_pressed(input.KEY.A)) {
             let enm = enemies.get_at_position(cursor_x+maps.get_offset().x, cursor_y+maps.get_offset().y);
-            console.log(enm);
             if(enm) {
                 let edx = Math.abs((x+maps.get_offset().x) - enm.x);
                 let edy = Math.abs((y+maps.get_offset().y) - enm.y);
-                if(edx <= 1 && edy <= 1) {
-                    let dmg = stats.str + stats.dex;
-                    enemies.damage(enm, dmg);
-                    messagelog.push(`You attack the ${enm.name}`);
-                    messagelog.push(`Dealt ${dmg} damage!`);
+                if(edx <= equipment.weapon.range && edy <= equipment.weapon.range) {
+                    let dmg = equipment.weapon.atk;
+                    if(equipment.weapon["ammotype"] !== undefined) {
+                        // Uses ammo
+                        let ammo = inventory.get(equipment.weapon["ammotype"]);
+                        if(ammo) {
+                            enemies.damage(enm, dmg);
+                            effects.hit(cursor_x*16, cursor_y*16);
+                            messagelog.push(`You let loose an ${ammo.name} with your ${equipment.weapon.name}`);
+                            messagelog.push(`You hit the ${enm.name}`);
+                            messagelog.push(`Dealt ${dmg} damage!`);
+                        } else {
+                            messagelog.push(`You haven't any ammunition for your ${equipment.weapon.name}`);
+                        }
+                    } else {
+                        enemies.damage(enm, dmg);
+                        effects.hit(cursor_x*16, cursor_y*16);
+                        messagelog.push(`You attack the ${enm.name} with your ${equipment.weapon.name}`);
+                        messagelog.push(`Dealt ${dmg} damage!`);
+                    }
                 } else {
                     messagelog.push(`The ${enm.name} is out of reach!`);
                     messagelog.push(`You miss!`);
                 }
             } else {
                 if(x === cursor_x && y === cursor_y) {
-                    messagelog.push("Your smack yourself with your weapon");
-                    let dmg = stats.str + stats.dex;
+                    messagelog.push(`Your attack yourself with your ${equipment.weapon.name}`);
+                    let dmg = equipment.weapon.atk;
                     stats.hp -= dmg;
+                    effects.hit(cursor_x*16, cursor_y*16);
                     messagelog.push(`Dealt ${dmg} damage to self.`);
                 } else {
-                    messagelog.push("Critical miss!");
+                    if(things.is_thing(cursor_x+maps.get_offset().x, cursor_y+maps.get_offset().y)) {
+                        effects.hit(cursor_x*16, cursor_y*16);
+                        things.attack(cursor_x+maps.get_offset().x, cursor_y+maps.get_offset().y);
+                    } else {
+                        messagelog.push("Critical miss!");
+                    }
                 }
             }
                 mode = MODES.NORMAL;
@@ -207,6 +307,9 @@ export function draw() {
 
     if(mode === MODES.ATTACK) {
         util.draw_sprite("ui/cursor/attack", cursor_x*16, cursor_y*16);
+    }
+    if(mode === MODES.LOOK) {
+        util.draw_sprite("ui/cursor/select", cursor_x*16, cursor_y*16);
     }
 }
 

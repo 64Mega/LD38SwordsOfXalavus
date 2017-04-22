@@ -2,6 +2,8 @@
 import * as assets from '../assets';
 import * as util from '../util';
 import * as player from './player';
+import * as things from "./things";
+import * as enemies from "./enemy";
 
 let maps = {};
 let current_map = null;
@@ -77,6 +79,8 @@ export function is_visible(x: number, y: number) {
 
 export function switch_map(id : string) {
     current_map = maps[id];
+    do_spawns();
+    do_things();
     if(current_map && current_map.meta.player) {
         player.setpos(current_map.meta.player.x, current_map.meta.player.y);
     }
@@ -104,7 +108,26 @@ function diagonal_distance(x1: number, y1: number, x2: number, y2: number) {
     return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2));
 }
 
-// Test Map Data (Use Tiled later)
+export function do_spawns() {
+    enemies.clear_spawns();
+    if(current_map && current_map.meta && current_map.meta.mapenemies) {
+        for(let i = 0; i < current_map.meta.mapenemies.length; i++) {
+            let e = current_map.meta.mapenemies[i];
+            enemies.spawn(e.type, e.x, e.y);
+        }
+    }
+}
+
+export function do_things() {
+    if(current_map && current_map.meta && current_map.meta.mapthings) {
+        for(let i = 0; i < current_map.meta.mapthings.length; i++) {
+            let t = current_map.meta.mapthings[i];
+            things.spawn(t.type, t.x, t.y);
+        }
+    }
+}
+
+// Map Data
 
 export function init() {
     assets.image_load("tiles/main", "data/images/tiles/tiles.png");
@@ -113,6 +136,14 @@ export function init() {
         name: "Debug",
         player: {
             x: 6, y: 6
-        }
+        },
+        mapenemies: [
+            {type: enemies.enemyTypes.SNAKE, x: 4, y: 4 },
+            {type: enemies.enemyTypes.SNAKE, x: 4, y: 8 },
+            {type: enemies.enemyTypes.SNAKE, x: 15, y: 4 }
+        ],
+        mapthings: [
+            {type: things.thingtypes.signpost, x: 3, y: 3}
+        ]
     }, [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 2, 2, 2, 2, 2, 2, 2, 6, 6, 1, 6, 6, 6, 2, 2, 2, 2, 2, 2, 4, 4, 5, 5, 5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 2, 2, 2, 3, 2, 4, 4, 4, 4, 5, 5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 2, 2, 2, 2, 2, 4, 4, 2, 2, 5, 5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 2, 2, 2, 2, 4, 4, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 2, 2, 2, 2, 4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 2, 2, 2, 2, 4, 4, 3, 2, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 2, 2, 2, 2, 6, 6, 2, 2, 3, 2, 4, 4, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 6, 6, 2, 2, 2, 2, 4, 4, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 6, 6, 6, 2, 2, 2, 4, 4, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 6, 6, 6, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 6, 6, 6, 2, 2, 2, 2, 2, 2, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 2, 2, 2, 2, 2, 2, 2, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 1, 1, 6, 6, 6, 6, 2, 2, 2, 2, 2, 6, 6, 6, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 6, 6, 6, 6, 6, 6, 6, 6, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 6, 6, 6, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
 }
