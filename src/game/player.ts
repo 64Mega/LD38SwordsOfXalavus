@@ -11,7 +11,7 @@ import * as gamestate from "./gamestate";
 import * as inventory from "./inventory";
 import * as things from "./things";
 import * as effects from "./fx";
-
+import * as audio from "../audio";
 let x: number = 0;
 let y: number = 0;
 
@@ -22,20 +22,22 @@ enum MODES {
     NORMAL = 0,
     ATTACK,
     LOOK,
-    GET
+    GET,
+    CAST
 };
 
 let mode = MODES.NORMAL;
 
 // Stats 
-let stats = {
-    hp: 10, maxhp: 10,
-    mp: 5, maxmp: 5,
+export let stats = {
+    hp: 50, maxhp: 50,
+    mp: 15, maxmp: 15,
     str: 2,
-    def: 1,
-    dex: 1,
-    mag: 1,
-    gold: 0
+    def: 2,
+    dex: 2,
+    mag: 2,
+    gold: 0,
+    max_xp: 20
 }
 
 let equipment = {
@@ -45,8 +47,16 @@ let equipment = {
     },
     weapon: {
         name: "Bare Fists",
-        atk: 1,
+        minatk: 1,
+        maxatk: 1,
         range: 1
+    },
+    spell: {
+        name: "Random Mana Discharge",
+        minatk: 0,
+        maxatk: 1,
+        range: 5,
+        cost: 2
     }
 };
 
@@ -58,6 +68,10 @@ export function equip_armor(armor: any) {
 
 export function equip_weapon(weapon: any) {
     equipment.weapon = weapon;
+}
+
+export function equip_spell(spell: any) {
+    equipment.spell = spell;
 }
 
 export function init(xpos: number, ypos: number) {
@@ -101,19 +115,47 @@ export function update_occupy() {
     maps.occupy(x + maps.get_offset().x, y + maps.get_offset().y);
 }
 
+export function regen_mp() {
+    if(stats.mp < stats.maxmp) { stats.mp++; }
+}
+
 export function update() {
+    // Leveling
+    if(stats.gold >= stats.max_xp) {
+        stats.gold -= stats.max_xp;
+        stats.max_xp += Math.floor(stats.max_xp * 0.1);
+        messagelog.push("LEVEL UP! You feel stronger.");
+        stats.maxhp = stats.maxhp + Math.floor(Math.max(1, stats.maxhp * 0.5));
+        stats.maxmp = stats.maxmp + Math.floor(Math.max(1, stats.maxmp * 0.5));
+        stats.str = stats.str + Math.floor(Math.max(1, (stats.str+stats.hp)*0.05));
+        stats.dex = stats.dex + Math.floor(Math.max(1, (stats.dex+stats.str)*0.1));
+        stats.mag = stats.mag + Math.floor(Math.max(1, (stats.mag+stats.maxmp)*0.1));
+        // Full heal/restore
+        stats.hp = stats.maxhp;
+        stats.mp = stats.maxmp;
+    }
+
+    if(stats.hp <= 0) { 
+        gamestate.set_state(gamestate.STATES.GAMEOVER);
+    }
+
+    // Modes
     if(mode === MODES.NORMAL) {
         if(input.key_pressed(input.KEY.LEFT)) {
             move_left();
+            regen_mp();
             return true;
         } else if(input.key_pressed(input.KEY.RIGHT)) {
             move_right();
+            regen_mp();
             return true;
         } else if(input.key_pressed(input.KEY.UP)) {
             move_up();
+            regen_mp();
             return true;
         } else if(input.key_pressed(input.KEY.DOWN)) {
             move_down();
+            regen_mp();
             return true;
         } else if(input.key_pressed(input.KEY.A)) {
             mode = MODES.ATTACK;
@@ -133,11 +175,18 @@ export function update() {
             cursor_x = x;
             cursor_y = y;
             return false;
+        } else if(input.key_pressed(input.KEY.C)) {
+            mode = MODES.CAST;
+            messagelog.push("Select target with arrow keys");
+            cursor_x = x;
+            cursor_y = y;
+            return false;
         } else if(input.key_pressed(input.KEY.I)) {
             gamestate.set_state(gamestate.STATES.INVENTORY);
             return false;
         }
     } 
+    
     if(mode === MODES.LOOK) {
         if(input.key_pressed(input.KEY.ESCAPE) ||
             input.key_pressed(input.KEY.BACKSPACE)) {
@@ -181,6 +230,7 @@ export function update() {
             if(cursor_y < 11) { cursor_y += 1; }
         }  
     }
+
     if(mode === MODES.GET) {
         if(input.key_pressed(input.KEY.ESCAPE) ||
             input.key_pressed(input.KEY.BACKSPACE)) {
@@ -219,6 +269,7 @@ export function update() {
             if(cursor_y < 11) { cursor_y += 1; }
         }  
     }
+
     if(mode === MODES.ATTACK) {
         if(input.key_pressed(input.KEY.ESCAPE) ||
             input.key_pressed(input.KEY.BACKSPACE)) {
@@ -233,7 +284,7 @@ export function update() {
                 let edx = Math.abs((x+maps.get_offset().x) - enm.x);
                 let edy = Math.abs((y+maps.get_offset().y) - enm.y);
                 if(edx <= equipment.weapon.range && edy <= equipment.weapon.range) {
-                    let dmg = equipment.weapon.atk;
+                    let dmg = util.roll(equipment.weapon.minatk, equipment.weapon.maxatk);
                     if(equipment.weapon["ammotype"] !== undefined) {
                         // Uses ammo
                         let ammo = inventory.get(equipment.weapon["ammotype"]);
@@ -259,10 +310,80 @@ export function update() {
             } else {
                 if(x === cursor_x && y === cursor_y) {
                     messagelog.push(`Your attack yourself with your ${equipment.weapon.name}`);
-                    let dmg = equipment.weapon.atk;
+                    let dmg = util.roll(equipment.weapon.minatk, equipment.weapon.maxatk);
                     stats.hp -= dmg;
                     effects.hit(cursor_x*16, cursor_y*16);
                     messagelog.push(`Dealt ${dmg} damage to self.`);
+                } else {
+                    if(things.is_thing(cursor_x+maps.get_offset().x, cursor_y+maps.get_offset().y)) {
+                        effects.hit(cursor_x*16, cursor_y*16);
+                        things.attack(cursor_x+maps.get_offset().x, cursor_y+maps.get_offset().y);
+                    } else {
+                        messagelog.push("Critical miss!");
+                    }
+                }
+            }
+                mode = MODES.NORMAL;
+                return true;
+        }
+
+        if(input.key_pressed(input.KEY.LEFT)) {
+            if(cursor_x > 0) { cursor_x -= 1; }
+        }
+        if(input.key_pressed(input.KEY.RIGHT)) {
+            if(cursor_x < 11) { cursor_x += 1; }
+        }
+        if(input.key_pressed(input.KEY.UP)) {
+            if(cursor_y > 0) { cursor_y -= 1; }
+        }
+        if(input.key_pressed(input.KEY.DOWN)) {
+            if(cursor_y < 11) { cursor_y += 1; }
+        }  
+    }
+
+    if(mode === MODES.CAST) {
+        if(input.key_pressed(input.KEY.ESCAPE) ||
+            input.key_pressed(input.KEY.BACKSPACE)) {
+                mode = MODES.NORMAL;
+                messagelog.push("Cast mode canceled");
+            }
+
+        if(input.key_pressed(input.KEY.ENTER) || 
+        input.key_pressed(input.KEY.C)) {
+            if(stats.mp >= equipment.spell.cost) {
+                stats.mp -= equipment.spell.cost;
+            } else {
+                messagelog.push("Not enough MP!");
+                mode = MODES.NORMAL;
+                return true;
+            }
+            let enm = enemies.get_at_position(cursor_x+maps.get_offset().x, cursor_y+maps.get_offset().y);
+            if(enm) {
+                let edx = Math.abs((x+maps.get_offset().x) - enm.x);
+                let edy = Math.abs((y+maps.get_offset().y) - enm.y);
+                if(edx <= equipment.spell.range && edy <= equipment.spell.range) {
+                    let dmg = util.roll(equipment.spell.minatk, equipment.spell.maxatk);
+                    
+                    enemies.damage(enm, dmg);
+                    effects.hit(cursor_x*16, cursor_y*16);
+                    messagelog.push(`You cast ${equipment.spell.name} for ${equipment.spell.cost} MP!`);
+                    messagelog.push(`Dealt ${dmg} damage to ${enm.name}!`);
+                } else {
+                    messagelog.push(`The ${enm.name} is out of reach!`);
+                    messagelog.push(`You miss!`);
+                }
+            } else {
+                if(x === cursor_x && y === cursor_y) {
+                    messagelog.push(`Your cast ${equipment.spell.name} on yourself.`);
+                    let dmg = util.roll(equipment.spell.minatk, equipment.spell.maxatk);
+                    if(dmg < 0) {
+                        heal(-dmg);
+                        effects.blinksprite(cursor_x*16, cursor_y*16, "fx/heal");
+                    } else {
+                        stats.hp -= dmg;
+                        effects.hit(cursor_x*16, cursor_y*16);
+                        messagelog.push(`Dealt ${dmg} damage to self.`);
+                    }
                 } else {
                     if(things.is_thing(cursor_x+maps.get_offset().x, cursor_y+maps.get_offset().y)) {
                         effects.hit(cursor_x*16, cursor_y*16);
@@ -320,6 +441,9 @@ export function move_left() {
         maps.is_passable(x+maps.get_offset().x-1, y+maps.get_offset().y)) {
         x -= 1;
         maps.occupy(x+maps.get_offset().x, y+maps.get_offset().y);
+        //audio.play_sound("snd/walk",0.05);
+    } else {
+        audio.play_sound("snd/hit",0.1);
     }
 }
 
@@ -328,6 +452,9 @@ export function move_right() {
         maps.is_passable(x+maps.get_offset().x+1, y+maps.get_offset().y)) {
         x += 1;
         maps.occupy(x+maps.get_offset().x, y+maps.get_offset().y);
+        //audio.play_sound("snd/walk",0.05);
+    } else {
+        audio.play_sound("snd/hit",0.1);
     }
 }
 
@@ -336,6 +463,9 @@ export function move_up() {
         maps.is_passable(x+maps.get_offset().x, y+maps.get_offset().y-1)) {
         y -= 1;
         maps.occupy(x+maps.get_offset().x, y+maps.get_offset().y);
+        //audio.play_sound("snd/walk",0.05);
+    } else {
+        audio.play_sound("snd/hit",0.1);
     }
 }
 
@@ -344,6 +474,9 @@ export function move_down() {
         maps.is_passable(x+maps.get_offset().x, y+maps.get_offset().y+1)) {
         y += 1;
         maps.occupy(x+maps.get_offset().x, y+maps.get_offset().y);
+        //audio.play_sound("snd/walk",0.05);
+    } else {
+        audio.play_sound("snd/hit",0.1);
     }
 }
 
@@ -359,6 +492,9 @@ export function draw() {
     if(mode === MODES.GET) {
         util.draw_sprite("ui/cursor/select", cursor_x*16, cursor_y*16);
     }
+    if(mode === MODES.CAST) {
+        util.draw_sprite("ui/cursor/magic", cursor_x*16, cursor_y*16);
+    }
 }
 
 export function draw_stats() {
@@ -367,8 +503,8 @@ export function draw_stats() {
     util.draw_text(208, 16, `HP: ${stats.hp}/${stats.maxhp}`);
     util.draw_text(208, 24, `MP: ${stats.mp}/${stats.maxmp}`);
     util.draw_text(208, 32, `STR: ${stats.str} DEX: ${stats.dex}`);
-    util.draw_text(208, 40, `DEF: ${stats.def} MAG: ${stats.mag}`);
-    util.draw_text(208, 48, `GOLD: ${stats.gold}`);
+    util.draw_text(208, 40, `MAG: ${stats.mag}`);
+    util.draw_text(208, 48, `XP: ${stats.gold}/${stats.max_xp}`);
 
     // Draw commands
     util.draw_text(200, 64, "ACTIONS");
@@ -376,6 +512,6 @@ export function draw_stats() {
     util.draw_highlight_text(208, 72, "Attack", "white");
     util.draw_highlight_text(208, 80, "Look", "slategray");
     util.draw_highlight_text(208, 88, "Inventory", "white");
-    util.draw_highlight_text(208, 96, "Enter", "slategray");
+    util.draw_highlight_text(208, 96, "Cast", "slategray");
     util.draw_highlight_text(208, 104, "Get", "white");
 }

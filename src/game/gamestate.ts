@@ -16,7 +16,8 @@ export enum STATES {
     MAGIC,
     GAMEOVER,
     TITLE,
-    MESSAGE
+    MESSAGE,
+    WIN
 };
 
 export function bind_state(state : STATES, update : any, render : any) {

@@ -58,6 +58,13 @@ export function draw_text(x : number, y : number, str : string) {
     }
 }
 
+export function draw_text_centered(y: number, str: string) {
+    var cw = 160;
+    var lw = Math.floor((str.length*5)/2);
+    draw_text(cw-lw, y, str); 
+    
+}
+
 export function draw_boxed_text(x: number, y: number, str: string, bgcolor: string) {
     var texwidth = str.length * 5;
     draw_fillrect(x,y,texwidth,8,bgcolor);
@@ -151,4 +158,9 @@ export function draw_sprite(spr: string, x: number, y: number) {
 // Quick-n-dirty object clone
 export function clone_object(obj) {
     return JSON.parse(JSON.stringify(obj));
+}
+
+// Dice Roll
+export function roll(min, max) {
+    return Math.round((Math.random()*(max-min))+min);
 }

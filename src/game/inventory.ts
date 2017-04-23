@@ -26,8 +26,11 @@ export function update(delta: number) {
     if(input.key_pressed(input.KEY.ENTER)) {
         if(inventory[cursor_pos]) {
             let res = items.use(inventory[cursor_pos]);
-            sweep();
-            if(res) {gamestate.set_state(gamestate.STATES.DEBUG);}
+            sweep(); 
+            if(res) {
+                cursor_pos = 0;
+                gamestate.set_state(gamestate.STATES.DEBUG);
+            }
         }
     }
 }
@@ -35,7 +38,7 @@ export function update(delta: number) {
 export function add(item: any) {
     for(let i = 0; i < inventory.length; i++) {
         if(inventory[i].name === item.name) {
-            inventory[i].quantity++;
+            inventory[i].quantity+=item.quantity;
             return;
         }
     }
@@ -67,10 +70,10 @@ export function render() {
     for(let i = 0; i < inventory.length; i++) {
         if(inventory[i]) {
             if(cursor_pos === i) {
-                util.draw_text_inverted(24,24+(i*8), inventory[i].quantity === 1 ? inventory[i].name : inventory[i].name + ` (${inventory[i].quantity})`,"slategray");
+                util.draw_text_inverted(24,24+(i*8), (!inventory[i].quantity || inventory[i].quantity === 1) ? inventory[i].name : inventory[i].name + ` (${inventory[i].quantity})`,"slategray");
                 util.set_font("font/main");
             } else {
-                util.draw_text(24,24+(i*8), inventory[i].quantity === 1 ? inventory[i].name : inventory[i].name + ` (${inventory[i].quantity})`);
+                util.draw_text(24,24+(i*8), (!inventory[i].quantity || inventory[i].quantity === 1) ? inventory[i].name : inventory[i].name + ` (${inventory[i].quantity})`);
             }
         }
     }
@@ -78,10 +81,4 @@ export function render() {
 
 export function bind() {
     gamestate.bind_state(gamestate.STATES.INVENTORY, update, render);
-
-    add(items.create(items.itemtypes.healing_herb));
-    add(items.create(items.itemtypes.healing_herb));
-    add(items.create(items.itemtypes.healing_herb));
-    add(items.create(items.itemtypes.healing_potion));
-    add(items.create(items.itemtypes.useless_mcguffin));
 }

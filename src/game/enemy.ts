@@ -6,6 +6,7 @@ import * as maps from "./map";
 import * as player from './player';
 import * as messagelog from './messagelog';
 import * as effects from './fx';
+import * as gamestate from "./gamestate";
 
 let enemies = [];
 
@@ -14,13 +15,98 @@ export let enemyTypes = {
         sprite: "enemy/snake",
         name: "Snake",
         detail: "Red Snake",
+        maxhp: 2,
         hp: 2,
         gold: 1,
         atk: 1,
         x: 0,
         y: 0,
         range: 1
-    }
+    },
+    "SLIME": {
+        sprite: "enemy/slime",
+        name: "Slime",
+        detail: "Slime",
+        maxhp: 4,
+        hp: 4,
+        gold: 2,
+        atk: 1,
+        x: 0,
+        y: 0,
+        range: 1
+    },
+    "RAT": {
+        sprite: "enemy/rat",
+        name: "Rat",
+        detail: "Mangy Rat",
+        maxhp: 1,
+        hp: 1,
+        gold: 2,
+        atk: 2,
+        x: 0,
+        y: 0,
+        range: 1
+    },
+    "BAT": {
+        sprite: "enemy/bat",
+        name: "Giant Bat",
+        detail: "Giant Bat",
+        maxhp: 5,
+        hp: 5,
+        gold: 3,
+        atk: 1,
+        x: 0,
+        y: 0,
+        range: 1
+    },
+    "ZOMBIE": {
+        sprite: "enemy/zombie",
+        name: "Zombie",
+        detail: "Zombie",
+        maxhp: 8,
+        hp: 8,
+        gold: 5,
+        atk: 2,
+        x: 0,
+        y: 0,
+        range: 1
+    },
+    "SKELETON": {
+        sprite: "enemy/skeleton",
+        name: "Skeleton",
+        detail: "Skeleton",
+        maxhp: 4,
+        hp: 4,
+        gold: 4,
+        atk: 4,
+        x: 0,
+        y: 0,
+        range: 1
+    },
+    "GOBLIN": {
+        sprite: "enemy/goblin",
+        name: "Goblin",
+        detail: "Goblin",
+        maxhp: 9,
+        hp: 9,
+        gold: 7,
+        atk: 5,
+        x: 0,
+        y: 0,
+        range: 1
+    },
+    "DRAGON": {
+        sprite: "enemy/dragon",
+        name: "Dragon",
+        detail: "Dragon",
+        maxhp: 30,
+        hp: 30,
+        gold: 20,
+        atk: 3,
+        x: 0,
+        y: 0,
+        range: 1
+    },
 };
 
 function move_left(enemy: any) {
@@ -81,10 +167,14 @@ export function damage(enemy: any, amount: number) {
 }
 
 export function death(enemy: any) {
-    messagelog.push(`The ${enemy.name} was vanquished! Received ${enemy.gold}g`);
-    player.give_gold(enemy.gold);
+    let xp = util.roll(1, enemy.maxhp);
+    messagelog.push(`The ${enemy.name} was vanquished! Received ${xp}xp`);
+    player.give_gold(xp);
     effects.hit((enemy.x-maps.get_offset().x)*16, (enemy.y-maps.get_offset().y)*16);
     effects.blinksprite((enemy.x-maps.get_offset().x)*16, (enemy.y-maps.get_offset().y)*16, enemy.sprite);
+    if(enemy.name === "Dragon") {
+        gamestate.set_state(gamestate.STATES.WIN);
+    }
 }
 
 export function get_at_position(x: number, y: number) {
@@ -135,6 +225,13 @@ export function update(delta: number) {
 
 export function load() {
     assets.image_load("enemy/snake", "data/images/chars/snake.png");
+    assets.image_load("enemy/slime", "data/images/chars/slime.png");
+    assets.image_load("enemy/rat", "data/images/chars/rat.png");
+    assets.image_load("enemy/zombie", "data/images/chars/zombie.png");
+    assets.image_load("enemy/bat", "data/images/chars/bat.png");
+    assets.image_load("enemy/skeleton", "data/images/chars/skeleton.png");
+    assets.image_load("enemy/goblin", "data/images/chars/goblin.png");
+    assets.image_load("enemy/dragon", "data/images/chars/dragon.png");
 }
 
 export function clear_spawns() {

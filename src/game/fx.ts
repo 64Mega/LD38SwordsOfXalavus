@@ -18,7 +18,7 @@ export function hit(x: number, y: number) {
 
 export function blinksprite(x: number, y: number, spr: string) {
     let e = {
-        type: EFFECT.BLINKSPRITE, "x": x, "y": y, lifetime: 10, sprite: spr
+        type: EFFECT.BLINKSPRITE, "x": x, "y": y, lifetime: 20, sprite: spr
     };
 
     effects.push(e);

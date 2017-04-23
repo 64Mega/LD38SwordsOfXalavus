@@ -40,10 +40,155 @@ export let thingtypes = {
     "shortsword": {
         type: THING.PICKUP,
         name: "short sword",
-        sprite: "thing/pickup_default",
-        solid: false,
+        sprite: "thing/chest",
+        solid: true,
         x: 0, y: 0,
         gives: items.itemtypes.shortsword
+    },
+    "heavy_stick": {
+        type: THING.PICKUP,
+        name: "heavy stick",
+        sprite: "thing/chest",
+        solid: true,
+        x: 0, y: 0,
+        gives: items.itemtypes.heavy_stick
+    },
+    "claymore": {
+        type: THING.PICKUP,
+        name: "claymore",
+        sprite: "thing/chest",
+        solid: true,
+        x: 0, y: 0,
+        gives: items.itemtypes.longsword
+    },
+    "spear": {
+        type: THING.PICKUP,
+        name: "spear",
+        sprite: "thing/chest",
+        solid: true,
+        x: 0, y: 0,
+        gives: items.itemtypes.spear
+    },
+    "shortbow": {
+        type: THING.PICKUP,
+        name: "shortbow",
+        sprite: "thing/chest",
+        solid: true,
+        x: 0, y: 0,
+        gives: items.itemtypes.shortbow
+    },
+    "arrow_x15": {
+        type: THING.PICKUP,
+        name: "bundle of arrows",
+        sprite: "thing/chest",
+        solid: true,
+        quantity: 15,
+        x: 0, y: 0,
+        gives: items.itemtypes.arrow
+    },
+    "beater": {
+        type: THING.PICKUP,
+        name: "beater",
+        sprite: "thing/pickup_default",
+        solid: true,
+        x: 0, y: 0,
+        gives: items.itemtypes.seagull_beater
+    },
+    "leather_armor": {
+        type: THING.PICKUP,
+        name: "leather armor",
+        sprite: "thing/chest",
+        solid: true,
+        x: 0, y: 0,
+        gives: items.itemtypes.leather_armor
+    },
+    "healing_herbs_x3": {
+        type: THING.PICKUP,
+        name: "small bag of healing herbs",
+        sprite: "thing/pickup_default",
+        solid: true,
+        x: 0, y: 0,
+        gives: items.itemtypes.healing_herb_x3,
+        quantity: 3
+    },
+    "bed": {
+        // Should make this heal the player on use
+        type: THING.DUMMY,
+        name: "bed",
+        sprite: "thing/bed",
+        solid: true,
+        x: 0, y: 0
+    },
+    "cupboard": {
+        // Will eventually be a container object
+        // Should make the Inventory screen a reusable class for that purpose,
+        // can be used for shops too.
+        type: THING.DUMMY,
+        name: "cupboard",
+        sprite: "thing/cupboard",
+        solid: true,
+        x: 0, y: 0
+    },
+    "bookshelf": {
+        type: THING.SIGNPOST,
+        name: "bookshelf",
+        sprite: "thing/bookshelf",
+        solid: true,
+        message: [
+            "A dusty collection of books.",
+            "You spend a few minutes leafing through",
+            "the pages of some old tomes."
+        ],
+        x: 0, y: 0
+    },
+    "fakewall": {
+        type: THING.DUMMY,
+        name: "cracked wall",
+        sprite: "thing/fakewall",
+        solid: true,
+        candestroy: true,
+        x: 0, y: 0
+    },
+    // Spell pickups
+    "spell_magic_arrow": {
+        type: THING.PICKUP,
+        name: "spell: magic arrow",
+        sprite: "thing/spellbook",
+        solid: true,
+        candestroy: false,
+        x: 0, y: 0,
+        gives: items.itemtypes.spell_magic_arrow,
+        quantity: 1
+    },
+    "spell_light_heal": {
+        type: THING.PICKUP,
+        name: "spell: light heal",
+        sprite: "thing/spellbook",
+        solid: true,
+        candestroy: false,
+        x: 0, y: 0,
+        gives: items.itemtypes.spell_light_heal,
+        quantity: 1
+    },
+    "spell_fireball": {
+        type: THING.PICKUP,
+        name: "spell: fireball",
+        sprite: "thing/spellbook",
+        solid: true,
+        candestroy: false,
+        x: 0, y: 0,
+        gives: items.itemtypes.spell_fireball,
+        quantity: 1
+    },
+    "spell_lightning_stake": {
+        type: THING.PICKUP,
+        name: "spell: lightning stake",
+        sprite: "thing/spellbook",
+        solid: true,
+        candestroy: false,
+        x: 0, y: 0,
+        gives: items.itemtypes.spell_lightning_stake,
+        quantity: 1
     }
 };
 
@@ -76,12 +221,21 @@ export function clear() {
     things = [];
 }
 
-export function spawn(type: any, x: number, y: number) {
+export function spawn(type: any, x: number, y: number, onremove?: any) {
     let instance = null;
     if(type !== undefined) {
         instance = util.clone_object(type);
         instance.x = x;
         instance.y = y;
+
+        if(onremove !== undefined) {
+            instance.onremove = onremove;
+        }
+
+        if(type.quantity !== undefined) {
+            instance.quantity = type.quantity;
+        }
+
         things.push(instance);
     }
 }
@@ -98,6 +252,9 @@ export function get(x: number, y: number) {
             if(things[i].type === THING.PICKUP) {
                 inventory.add(things[i].gives);
                 messagelog.push(`Picked up ${things[i].name}`);
+                if(things[i].onremove) {
+                    things[i].onremove();
+                }
                 things.splice(i,1);
                 return;
             }
@@ -126,6 +283,9 @@ export function attack(x: number, y: number) {
         if(things[i].x === x && things[i].y === y) {
             if(things[i].candestroy) {
                 messagelog.push(`You smash the ${things[i].name}, breaking it into pieces!`);
+                if(things[i].onremove) {
+                    things[i].onremove();
+                }
                 things.splice(i,1);
             } else {
                 messagelog.push(`You hit the ${things[i].name}, accomplishing nothing.`);
