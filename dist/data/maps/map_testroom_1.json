@@ -1,0 +1,35 @@
+{ "height":12,
+ "layers":[
+        {
+         "data":[6, 6, 6, 6, 9, 10, 11, 10, 9, 6, 6, 6, 6, 18, 18, 18, 18, 14, 14, 14, 18, 18, 18, 6, 6, 18, 18, 18, 4, 4, 4, 4, 4, 18, 18, 6, 6, 18, 18, 18, 4, 12, 12, 12, 4, 18, 18, 6, 6, 18, 18, 18, 18, 12, 12, 12, 18, 18, 18, 6, 6, 18, 18, 18, 18, 12, 12, 12, 18, 18, 18, 6, 6, 18, 4, 5, 5, 12, 12, 12, 5, 5, 18, 6, 6, 18, 4, 4, 5, 5, 5, 5, 5, 4, 18, 6, 6, 18, 4, 4, 5, 5, 5, 5, 5, 18, 18, 6, 6, 18, 18, 4, 4, 5, 5, 5, 4, 18, 18, 6, 6, 18, 18, 18, 6, 6, 5, 6, 6, 18, 18, 6, 6, 6, 6, 6, 6, 6, 1, 6, 6, 6, 6, 6],
+         "height":12,
+         "name":"Tile Layer 1",
+         "opacity":1,
+         "type":"tilelayer",
+         "visible":true,
+         "width":12,
+         "x":0,
+         "y":0
+        }],
+ "nextobjectid":1,
+ "orientation":"orthogonal",
+ "renderorder":"right-down",
+ "tileheight":16,
+ "tilesets":[
+        {
+         "columns":18,
+         "firstgid":1,
+         "image":"..\/images\/tiles\/tiles.png",
+         "imageheight":16,
+         "imagewidth":288,
+         "margin":0,
+         "name":"Tileset",
+         "spacing":0,
+         "tilecount":18,
+         "tileheight":16,
+         "tilewidth":16
+        }],
+ "tilewidth":16,
+ "version":1,
+ "width":12
+}
